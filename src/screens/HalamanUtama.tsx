@@ -1,4 +1,4 @@
-import { FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View, Image } from 'react-native'
+import { FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View, Image, Switch } from 'react-native'
 import React, { useCallback, useEffect, useState } from 'react'
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { AppRouteParams } from 'navigation/type'
@@ -11,33 +11,40 @@ type HalamanUtamaScreenProps = NativeStackScreenProps<AppRouteParams, 'HalamanUt
 const HalamanUtama = ({ navigation }: HalamanUtamaScreenProps) => {
      const [jobList, setJobList] = useState<JobList[]>([])
      const [expand, setExpand] = useState(false)
-     const [loadingJoblist, setLoadingJoblist] = useState<boolean>(true)
-     const [loadMoreJoblist, setLoadMoreJoblist] = useState<boolean>(false)
+     const [filterDesc, setFilterDesc] = useState('')
+     const [filterFulltime, setFilterFulltime] = useState(false)
+     const [filterLocation, setFilterLocation] = useState('')
+     const [tempFilterFulltime, setTempFilterFulltime] = useState(false)
+     const [tempfilterLocation, setTempFilterLocation] = useState('')
 
      useEffect(() => {
-          axios.get<JobList[]>(apiEndPoints.JOBLIST)
+          const params = {
+               description: filterDesc ? filterDesc.toLowerCase() : undefined,
+               full_time: filterFulltime,
+               location: filterLocation ? filterLocation.toLowerCase() : undefined
+          }
+          console.log(params)
+          axios.get<JobList[]>(apiEndPoints.JOBLIST, {
+               params: params
+          })
                .then(res => {
                     setJobList(res.data)
                })
-     }, [])
+     }, [filterDesc, filterFulltime, filterLocation])
 
      const doFilter = () => {
           setExpand(!expand)
      }
 
-     // const reload = useCallback((offset: number = 0, limit: number = 10, replaceAll: boolean = true) => {
-     //      if(replaceAll) {
-     //           setLoadingJoblist(true)
-     //      }
-     //      return axios.get<JobList[]>((apiEndPoints.JOBLIST), {
-     //           params: {offset, limit}
-     //      })
-     //      .then((result) => {
-     //           setLoadingJoblist(false)
-     //           setLoadMoreJoblist()
+     const setFilterDescription = useCallback((text: string) => {
+          setFilterDesc(text)
+     }, [])
 
-     //      })
-     // }, [])
+     const applyNow = () => {
+          setFilterFulltime(tempFilterFulltime)
+          setFilterLocation(tempfilterLocation)
+     }
+
      return (
           <View style={styles.container}>
                <View style={{ marginHorizontal: 10 }}>
@@ -50,7 +57,7 @@ const HalamanUtama = ({ navigation }: HalamanUtamaScreenProps) => {
                                    <Image source={require('assets/search.png')} style={{ width: 15, height: 15 }} />
                               </View>
                               <View>
-                                   <TextInput placeholder='search' style={{ paddingHorizontal: 5 }} />
+                                   <TextInput placeholder='search' style={{ paddingHorizontal: 5 }} onChangeText={setFilterDescription} />
                               </View>
                          </View>
                          <View style={{ paddingHorizontal: 5, justifyContent: 'center', alignItems: 'center' }}>
@@ -64,6 +71,31 @@ const HalamanUtama = ({ navigation }: HalamanUtamaScreenProps) => {
                               </TouchableOpacity>
                          </View>
                     </View>
+                    {expand &&
+                         <View style={{ borderColor: 'black', borderWidth: 1, marginTop: 5, paddingHorizontal: 5 }}>
+                              <View style={{ flexDirection: 'row' }}>
+                                   <View style={{ justifyContent: 'center', flex: 1 }}>
+                                        <Text>Fulltime</Text>
+                                   </View>
+                                   <View>
+                                        <Switch value={tempFilterFulltime} onValueChange={setTempFilterFulltime} />
+                                   </View>
+                              </View>
+                              <View style={{ flexDirection: 'row' }}>
+                                   <View style={{ justifyContent: 'center', flex: 1 }}>
+                                        <Text>Location</Text>
+                                   </View>
+                                   <View>
+                                        <TextInput style={{ borderWidth: 1, borderColor: 'black', width: 300, paddingHorizontal: 5 }} onChangeText={setTempFilterLocation} />
+                                   </View>
+                              </View>
+                              <View style={{ marginVertical: 5, flexDirection: 'row', justifyContent: 'flex-end' }}>
+                                   <TouchableOpacity style={{ backgroundColor: '#DDDDDD', borderColor: 'black', borderWidth: 1, width: 80, justifyContent: 'center', alignItems: 'center' }} onPress={applyNow}>
+                                        <Text>Apply now</Text>
+                                   </TouchableOpacity>
+                              </View>
+                         </View>
+                    }
                     <View style={{ marginTop: 20 }}>
                          <FlatList
                               data={jobList}
